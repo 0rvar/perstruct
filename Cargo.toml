@@ -1,29 +1,3 @@
-[package]
-name = "perstruct"
-version = "0.1.0"
-edition = "2021"
-authors = ["Orvar Segerström"]
+[workspace]
+members = ["perstruct", "perstruct-proc-macros"]
 resolver = "2"
-readme = "README.md"
-description = "Utility macro for adding persistent backing to a struct"
-repository = "https://github.com/0rvar/perstruct"
-license = "MIT"
-keywords = ["config", "database", "serde"]
-exclude = [".github/", ".gitignore"]
-
-
-[lib]
-proc-macro = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-quote = "1.0.35"
-syn = { version = "2.0.48", features = ["full", "extra-traits"] }
-serde_json = "1.0.111"
-proc-macro2 = "1.0.78"
-
-[dev-dependencies]
-pretty_assertions = "1.4.0"
-serde = "1.0.195"
-serde_derive = "1.0.195"

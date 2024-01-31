@@ -1,13 +1,17 @@
-use perstruct::settings;
+use std::collections::HashSet;
 
-#[settings]
+use perstruct::{perstruct, PerstructLoadResult};
+
+#[perstruct]
 struct MySettings {
-    #[setting(key = "b")]
+    #[perstruct(key = "b")]
     pub a: i32,
-    #[setting(default_fn = "default_foo")]
+    #[perstruct(default_fn = "default_foo")]
     foo: Foo,
-    #[setting(default = 2)]
+    #[perstruct(default = 2)]
     bar: i32,
+
+    list: Vec<()>,
 }
 
 #[derive(PartialEq, Eq, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
@@ -27,16 +31,30 @@ fn some_basic_tests() {
 
     settings.set_a(1);
     settings.set_bar(7);
+    settings.set_bar(8);
     assert_eq!(settings.a(), 1);
-    assert_eq!(settings.perstruct_dirty_fields(), &["b", "bar"]);
+    assert_eq!(
+        settings.perstruct_dirty_fields(),
+        &vec!["b", "bar"].into_iter().collect::<HashSet<_>>()
+    );
 
-    assert_eq!(MySettings::perstruct_keys(), vec!["b", "foo", "bar"]);
+    settings.update_list(|list| list.push(()));
 
-    let (settings, mut errors) = MySettings::from_map(
+    assert_eq!(
+        MySettings::perstruct_keys(),
+        vec!["b", "foo", "bar", "list"]
+    );
+
+    let PerstructLoadResult {
+        value: settings,
+        mut deserialization_errors,
+        unknown_fields,
+    } = MySettings::from_map(
         &vec![
-            ("b".to_string(), "3".to_string()),
-            ("foo".to_string(), "null".to_string()),
-            ("bar".to_string(), r#""a""#.to_string()),
+            ("b", "3".to_string()),
+            ("foo", "null".to_string()),
+            ("bar", r#""a""#.to_string()),
+            ("whatever", "null".to_string()),
         ]
         .into_iter()
         .collect(),
@@ -44,9 +62,9 @@ fn some_basic_tests() {
     assert_eq!(settings.a(), 3);
     assert_eq!(settings.bar(), 2);
     assert_eq!(settings.foo(), &Foo {});
-    errors.sort_by_key(|(k, _)| *k);
+    deserialization_errors.sort_by_key(|(k, _)| *k);
     assert_eq!(
-        errors,
+        deserialization_errors,
         vec![
             (
                 "bar",
@@ -58,4 +76,6 @@ fn some_basic_tests() {
             ),
         ]
     );
+
+    assert_eq!(unknown_fields, vec!["whatever".to_string()]);
 }
